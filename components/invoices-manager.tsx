@@ -30,6 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2, Search, FileText, Car, CheckCircle } from "lucide-react"
 import { InvoicePDF } from "@/components/invoice-pdf"
+import ExcelTools from "@/components/ExcelTools"
 
 interface Invoice {
   id: string
@@ -151,6 +152,10 @@ export function InvoicesManager() {
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([])
   const [invoiceType, setInvoiceType] = useState<"individual" | "combined">("individual")
 
+  // Estado para edición de cantidad bruta
+  const [editingAmount, setEditingAmount] = useState<string>("")
+  const [showAmountEdit, setShowAmountEdit] = useState(false)
+
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1
 
@@ -160,6 +165,7 @@ export function InvoicesManager() {
     mes: currentMonth.toString(),
     año: currentYear.toString(),
     estado: "pendiente" as const,
+    baseImponible: 0,
     sociedadId: "PARKING001",
   })
 
@@ -241,7 +247,8 @@ export function InvoicesManager() {
     const vehicle = vehicles.find((v) => v.id === vehicleId)
     if (!vehicle) return { baseImponible: 0, iva: 0, total: 0 }
 
-    const baseImponible = vehicle.pvp
+    // Si estamos editando y hay una cantidad personalizada, usarla
+    const baseImponible = showAmountEdit && editingAmount ? parseFloat(editingAmount) || 0 : vehicle.pvp
     const iva = baseImponible * 0.21 // 21% IVA
     const total = baseImponible + iva
 
@@ -339,6 +346,8 @@ export function InvoicesManager() {
     setFormData(getInitialFormData())
     setSelectedVehicles([])
     setInvoiceType("individual")
+    setEditingAmount("")
+    setShowAmountEdit(false)
     setEditingInvoice(null)
     setIsDialogOpen(false)
   }
@@ -350,9 +359,12 @@ export function InvoicesManager() {
       mes: invoice.mes || currentMonth.toString(),
       año: invoice.año || currentYear.toString(),
       estado: invoice.estado || "pendiente",
+      baseImponible: invoice.baseImponible || 0,
       sociedadId: invoice.sociedadId || "PARKING001",
     })
     setSelectedVehicles([invoice.vehiculoId])
+    setEditingAmount(invoice.baseImponible.toString())
+    setShowAmountEdit(true)
     setIsDialogOpen(true)
   }
 
@@ -627,6 +639,49 @@ export function InvoicesManager() {
                     </div>
                   )}
 
+                  {/* Edición de cantidad bruta */}
+                  {selectedVehicles.length === 1 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label>Cantidad Bruta</Label>
+                        <button
+                          type="button"
+                          onClick={() => setShowAmountEdit(!showAmountEdit)}
+                          className="text-xs text-blue-600 hover:text-blue-800"
+                        >
+                          {showAmountEdit ? "Usar precio del vehículo" : "Editar cantidad"}
+                        </button>
+                      </div>
+                      
+                      {showAmountEdit ? (
+                        <div>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={editingAmount}
+                            onChange={(e) => setEditingAmount(e.target.value)}
+                            placeholder="Cantidad bruta personalizada"
+                            className="mb-2"
+                          />
+                          <p className="text-xs text-gray-500">
+                            IVA (21%): {((parseFloat(editingAmount) || 0) * 0.21).toFixed(2)} €
+                          </p>
+                          <p className="text-xs font-medium">
+                            Total: {((parseFloat(editingAmount) || 0) * 1.21).toFixed(2)} €
+                          </p>
+                        </div>
+                      ) : (
+                        selectedVehicles.length > 0 && (
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-sm">
+                              Precio del vehículo: {getTotalAmount().toFixed(2)} € (IVA incluido)
+                            </p>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={resetForm}>
                       Cancelar
@@ -643,6 +698,10 @@ export function InvoicesManager() {
                 </form>
               </DialogContent>
             </Dialog>
+          </div>
+
+          <div className="flex justify-end">
+            <ExcelTools storageKey="parking-invoices" fileName="facturas" />
           </div>
 
           {!isLoaded ? (
