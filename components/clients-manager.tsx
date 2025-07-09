@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Edit, Trash2, Search } from "lucide-react"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
-import ExcelTools from "@/components/ExcelTools"; // Asegúrate de que esta importación esté presente
+import ExcelTools from "@/components/ExcelTools"
+import { validateSpanishNIF, formatNIF } from "@/lib/nif-validation"
 
 interface Client {
   id: string
@@ -241,6 +242,7 @@ export default function ClientsManager() { // Mantén esta exportación por defe
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [cifNifError, setCifNifError] = useState<string>("");
 
   // Initialize form data with proper default values
   const getInitialFormData = () => ({
@@ -284,17 +286,42 @@ export default function ClientsManager() { // Mantén esta exportación por defe
       client.cifNif.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const handleCifNifChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, cifNif: e.target.value })
+    
+    // Validar CIF/NIF en tiempo real
+    const validation = validateSpanishNIF(e.target.value)
+    if (e.target.value && !validation.isValid) {
+      setCifNifError(validation.error || 'Formato no válido')
+    } else {
+      setCifNifError('')
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validar CIF/NIF antes de enviar
+    const validation = validateSpanishNIF(formData.cifNif)
+    if (!validation.isValid) {
+      setCifNifError(validation.error || 'CIF/NIF no válido')
+      return
+    }
+
+    // Formatear CIF/NIF
+    const formattedData = {
+      ...formData,
+      cifNif: formatNIF(formData.cifNif)
+    }
+
     if (editingClient) {
       const updatedClients = clients.map((client) =>
-        client.id === editingClient.id ? { ...formData, id: editingClient.id } : client,
+        client.id === editingClient.id ? { ...formattedData, id: editingClient.id } : client,
       );
       saveClients(updatedClients);
     } else {
       const newClient: Client = {
-        ...formData,
+        ...formattedData,
         id: Date.now().toString(),
       };
       saveClients([...clients, newClient]);
@@ -305,6 +332,7 @@ export default function ClientsManager() { // Mantén esta exportación por defe
 
   const resetForm = () => {
     setFormData(getInitialFormData());
+    setCifNifError('');
     setEditingClient(null);
     setIsDialogOpen(false);
   };
@@ -403,9 +431,16 @@ export default function ClientsManager() { // Mantén esta exportación por defe
                   <Input
                     id="cifNif"
                     value={formData.cifNif}
-                    onChange={(e) => setFormData({ ...formData, cifNif: e.target.value })}
+                    onChange={handleCifNifChange}
+                    className={cifNifError ? "border-red-500" : ""}
                     required
                   />
+                  {cifNifError && (
+                    <p className="text-xs text-red-600 mt-1">{cifNifError}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formato: NIF (12345678A), NIE (X1234567A) o CIF (A12345674)
+                  </p>
                 </div>
 
                 <div>
@@ -443,16 +478,16 @@ export default function ClientsManager() { // Mantén esta exportación por defe
                   <Button type="button" variant="outline" onClick={resetForm}>
                     Cancelar
                   </Button>
-                  <Button type="submit">{editingClient ? "Actualizar" : "Crear"}</Button>
+                  <Button type="submit" disabled={!!cifNifError}>
+                    {editingClient ? "Actualizar" : "Crear"}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Agrega el componente ExcelTools aquí, preferiblemente cerca de donde tiene sentido para el usuario,
-            por ejemplo, cerca de la barra de búsqueda o el botón de "Nuevo Cliente". */}
-        <div className="flex justify-end"> {/* Puedes ajustar la posición según tu diseño */}
+        <div className="flex justify-end">
           <ExcelTools storageKey="parking-clients" fileName="clientes" />
         </div>
 

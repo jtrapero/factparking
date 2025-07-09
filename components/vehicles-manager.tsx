@@ -31,6 +31,7 @@ import {
 import { Plus, Edit, Trash2, Search, Loader2, CheckCircle, AlertCircle, Globe, ExternalLink } from "lucide-react"
 import { lookupVehicleInfo, generateVehicleModel, validateSpanishLicensePlate } from "@/lib/vehicle-lookup"
 import { Badge } from "@/components/ui/badge"
+import ExcelTools from "@/components/ExcelTools"
 
 interface Vehicle {
   id: string
@@ -411,6 +412,10 @@ export function VehiclesManager() {
               </form>
             </DialogContent>
           </Dialog>
+        </div>
+
+        <div className="flex justify-end">
+          <ExcelTools storageKey="parking-vehicles" fileName="vehiculos" />
         </div>
 
         {!isLoaded ? (
