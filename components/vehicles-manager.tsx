@@ -1,24 +1,13 @@
-"use client"
+// components/vehicles-manager.tsx
+"use client";
 
-import type React from "react"
-import ExcelTools from "@/components/ExcelTools";
-
-export default function ClientsManager() {
-  return (
-    <div>
-	<ExcelTools storageKey="vehiculos" fileName="vehiculos" />
-
-    </div>
-  );
-}
-
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -27,26 +16,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Search, Loader2, CheckCircle, AlertCircle, Globe, ExternalLink } from "lucide-react"
-import { lookupVehicleInfo, generateVehicleModel, validateSpanishLicensePlate } from "@/lib/vehicle-lookup"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dialog";
+import { Plus, Edit, Trash2, Search, Loader2, CheckCircle, AlertCircle, Globe, ExternalLink } from "lucide-react";
+import { lookupVehicleInfo, generateVehicleModel, validateSpanishLicensePlate } from "@/lib/vehicle-lookup";
+import { Badge } from "@/components/ui/badge";
+import ExcelTools from "@/components/ExcelTools"; // Asegúrate de que esta importación esté presente y con la capitalización correcta
 
 interface Vehicle {
-  id: string
-  matricula: string
-  cifNif: string
-  coche: string
-  pvp: number
-  activo: boolean
-  sociedadId: string
+  id: string;
+  matricula: string;
+  cifNif: string;
+  coche: string;
+  pvp: number;
+  activo: boolean;
+  sociedadId: string;
 }
 
 interface Client {
-  id: string
-  nombre: string
-  apellidos: string
-  cifNif: string
+  id: string;
+  nombre: string;
+  apellidos: string;
+  cifNif: string;
 }
 
 const INITIAL_VEHICLES: Vehicle[] = [
@@ -77,23 +67,22 @@ const INITIAL_VEHICLES: Vehicle[] = [
     activo: false,
     sociedadId: "PARKING001",
   },
-]
+];
 
-export function VehiclesManager() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [clients, setClients] = useState<Client[]>([])
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [isLookingUp, setIsLookingUp] = useState(false)
+export default function VehiclesManager() { // <-- ¡CAMBIA A EXPORTACIÓN POR DEFECTO PARA ESTE ARCHIVO!
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<{
-    type: "success" | "error" | "not_found" | null
-    message: string
-    note?: string
-  }>({ type: null, message: "" })
+    type: "success" | "error" | "not_found" | null;
+    message: string;
+    note?: string;
+  }>({ type: null, message: "" });
 
-  // Initialize form data with proper default values
   const getInitialFormData = () => ({
     matricula: "",
     cifNif: "",
@@ -101,50 +90,47 @@ export function VehiclesManager() {
     pvp: 0,
     activo: true,
     sociedadId: "PARKING001",
-  })
+  });
 
-  const [formData, setFormData] = useState(getInitialFormData())
+  const [formData, setFormData] = useState(getInitialFormData());
 
   useEffect(() => {
     try {
-      // Cargar vehículos
-      const storedVehicles = localStorage.getItem("parking-vehicles")
+      const storedVehicles = localStorage.getItem("parking-vehicles");
       if (storedVehicles) {
-        setVehicles(JSON.parse(storedVehicles))
+        setVehicles(JSON.parse(storedVehicles));
       } else {
-        setVehicles(INITIAL_VEHICLES)
-        localStorage.setItem("parking-vehicles", JSON.stringify(INITIAL_VEHICLES))
+        setVehicles(INITIAL_VEHICLES);
+        localStorage.setItem("parking-vehicles", JSON.stringify(INITIAL_VEHICLES));
       }
 
-      // Cargar clientes
-      const storedClients = localStorage.getItem("parking-clients")
+      const storedClients = localStorage.getItem("parking-clients");
       if (storedClients) {
-        setClients(JSON.parse(storedClients))
+        setClients(JSON.parse(storedClients));
       }
     } catch (error) {
-      console.error("Error loading data:", error)
-      setVehicles(INITIAL_VEHICLES)
+      console.error("Error loading data:", error);
+      setVehicles(INITIAL_VEHICLES);
     } finally {
-      setIsLoaded(true)
+      setIsLoaded(true);
     }
-  }, [])
+  }, []);
 
   const saveVehicles = (newVehicles: Vehicle[]) => {
-    setVehicles(newVehicles)
-    localStorage.setItem("parking-vehicles", JSON.stringify(newVehicles))
-  }
+    setVehicles(newVehicles);
+    localStorage.setItem("parking-vehicles", JSON.stringify(newVehicles));
+  };
 
   const handleMatriculaChange = async (matricula: string) => {
-    const upperMatricula = matricula.toUpperCase()
-    setFormData({ ...formData, matricula: upperMatricula })
-    setLookupStatus({ type: null, message: "" })
+    const upperMatricula = matricula.toUpperCase();
+    setFormData({ ...formData, matricula: upperMatricula });
+    setLookupStatus({ type: null, message: "" });
 
-    // Solo buscar si la matrícula tiene el formato correcto (4 números + 3 letras)
     if (upperMatricula.length === 7 && validateSpanishLicensePlate(upperMatricula)) {
-      setIsLookingUp(true)
+      setIsLookingUp(true);
 
       try {
-        const result = await lookupVehicleInfo(upperMatricula)
+        const result = await lookupVehicleInfo(upperMatricula);
 
         if (result.success && result.data) {
           const vehicleModel = generateVehicleModel(
@@ -153,72 +139,72 @@ export function VehiclesManager() {
             result.data.año,
             result.data.combustible,
             result.data.cv,
-          )
-          setFormData((prev) => ({ ...prev, coche: vehicleModel }))
+          );
+          setFormData((prev) => ({ ...prev, coche: vehicleModel }));
 
           setLookupStatus({
             type: "success",
             message: "Información encontrada en historialvehiculo.com",
             note: (result as any).note,
-          })
+          });
         } else {
           setLookupStatus({
             type: "not_found",
             message: result.error || "No se encontró información para esta matrícula",
-          })
+          });
         }
       } catch (error) {
         setLookupStatus({
           type: "error",
           message: "Error al conectar con el servicio de consulta",
-        })
+        });
       } finally {
-        setIsLookingUp(false)
+        setIsLookingUp(false);
       }
     }
-  }
+  };
 
   const filteredVehicles = vehicles.filter(
     (vehicle) =>
       vehicle.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.coche.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.cifNif.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  );
 
   const getClientName = (cifNif: string) => {
-    const client = clients.find((c) => c.cifNif === cifNif)
-    return client ? `${client.nombre} ${client.apellidos}` : cifNif
-  }
+    const client = clients.find((c) => c.cifNif === cifNif);
+    return client ? `${client.nombre} ${client.apellidos}` : cifNif;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (editingVehicle) {
       const updatedVehicles = vehicles.map((vehicle) =>
         vehicle.id === editingVehicle.id ? { ...formData, id: editingVehicle.id } : vehicle,
-      )
-      saveVehicles(updatedVehicles)
+      );
+      saveVehicles(updatedVehicles);
     } else {
       const newVehicle: Vehicle = {
         ...formData,
         id: Date.now().toString(),
-      }
-      saveVehicles([...vehicles, newVehicle])
+      };
+      saveVehicles([...vehicles, newVehicle]);
     }
 
-    resetForm()
-  }
+    resetForm();
+  };
 
   const resetForm = () => {
-    setFormData(getInitialFormData())
-    setEditingVehicle(null)
-    setIsDialogOpen(false)
-    setLookupStatus({ type: null, message: "" })
-    setIsLookingUp(false)
-  }
+    setFormData(getInitialFormData());
+    setEditingVehicle(null);
+    setIsDialogOpen(false);
+    setLookupStatus({ type: null, message: "" });
+    setIsLookingUp(false);
+  };
 
   const handleEdit = (vehicle: Vehicle) => {
-    setEditingVehicle(vehicle)
+    setEditingVehicle(vehicle);
     setFormData({
       matricula: vehicle.matricula || "",
       cifNif: vehicle.cifNif || "",
@@ -226,38 +212,38 @@ export function VehiclesManager() {
       pvp: vehicle.pvp || 0,
       activo: vehicle.activo ?? true,
       sociedadId: vehicle.sociedadId || "PARKING001",
-    })
-    setIsDialogOpen(true)
-    setLookupStatus({ type: null, message: "" })
-  }
+    });
+    setIsDialogOpen(true);
+    setLookupStatus({ type: null, message: "" });
+  };
 
   const handleDelete = (id: string) => {
     if (confirm("¿Está seguro de que desea eliminar este vehículo?")) {
-      const updatedVehicles = vehicles.filter((vehicle) => vehicle.id !== id)
-      saveVehicles(updatedVehicles)
+      const updatedVehicles = vehicles.filter((vehicle) => vehicle.id !== id);
+      saveVehicles(updatedVehicles);
     }
-  }
+  };
 
   const getLookupIcon = () => {
-    if (isLookingUp) return <Loader2 className="h-4 w-4 animate-spin" />
-    if (lookupStatus.type === "success") return <CheckCircle className="h-4 w-4 text-green-600" />
-    if (lookupStatus.type === "error") return <AlertCircle className="h-4 w-4 text-red-600" />
-    if (lookupStatus.type === "not_found") return <AlertCircle className="h-4 w-4 text-yellow-600" />
-    return null
-  }
+    if (isLookingUp) return <Loader2 className="h-4 w-4 animate-spin" />;
+    if (lookupStatus.type === "success") return <CheckCircle className="h-4 w-4 text-green-600" />;
+    if (lookupStatus.type === "error") return <AlertCircle className="h-4 w-4 text-red-600" />;
+    if (lookupStatus.type === "not_found") return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+    return null;
+  };
 
   const getLookupStatusColor = () => {
     switch (lookupStatus.type) {
       case "success":
-        return "text-green-600"
+        return "text-green-600";
       case "error":
-        return "text-red-600"
+        return "text-red-600";
       case "not_found":
-        return "text-yellow-600"
+        return "text-yellow-600";
       default:
-        return "text-gray-600"
+        return "text-gray-600";
     }
-  }
+  };
 
   return (
     <Card>
@@ -413,6 +399,11 @@ export function VehiclesManager() {
           </Dialog>
         </div>
 
+        {/* Agrega ExcelTools aquí para vehículos */}
+        <div className="flex gap-4 mt-4 justify-end">
+          <ExcelTools storageKey="parking-vehicles" fileName="vehiculos" />
+        </div>
+
         {!isLoaded ? (
           <div className="border rounded-lg p-8 text-center">
             <p className="text-gray-500">Cargando datos...</p>
@@ -467,5 +458,5 @@ export function VehiclesManager() {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

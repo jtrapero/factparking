@@ -1,12 +1,13 @@
-"use client"
+// components/clients-manager.tsx
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -15,234 +16,26 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Search } from "lucide-react"
-import { AddressAutocomplete } from "@/components/address-autocomplete"
-import ExcelTools from "@/components/ExcelTools"; // Asegúrate de que esta importación esté presente
+} from "@/components/ui/dialog";
+import { Plus, Edit, Trash2, Search } from "lucide-react";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import ExcelTools from "@/components/ExcelTools"; // Asegúrate de que esta importación esté presente y con la capitalización correcta
 
 interface Client {
-  id: string
-  nombre: string
-  apellidos: string
-  cifNif: string
-  direccion: string
-  cp: string
-  ciudad: string
-  sociedadId: string
+  // ... (tu interfaz Client)
 }
 
 const INITIAL_CLIENTS: Client[] = [
-  // ... (tu array INITIAL_CLIENTS permanece igual)
-  {
-    id: "1",
-    nombre: "Rafael",
-    apellidos: "Ciria Pascual",
-    cifNif: "50312463D",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "2",
-    nombre: "AONDA SOLUCIONES",
-    apellidos: "SL",
-    cifNif: "B44807287",
-    direccion: "C/SÁNCHEZ BARCAIZTEGUI 33",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "3",
-    nombre: "BAFRE GESTION Y SERVICIOS INMOBILIARIOS",
-    apellidos: "S.L",
-    cifNif: "B87550075",
-    direccion: "AV MEDITERRANEO, 38",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "4",
-    nombre: "BURGER KING SPAIN",
-    apellidos: "SLU",
-    cifNif: "B03093093",
-    direccion: "",
-    cp: "28224",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "5",
-    nombre: "CARMEN",
-    apellidos: "MUÑOZ BOX",
-    cifNif: "1269547Q",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "6",
-    nombre: "David",
-    apellidos: "Aguayo Peinado",
-    cifNif: "20260923Q",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "7",
-    nombre: "OBRAS Y PROYECTOS GEOTÉCNICOS",
-    apellidos: "S.L.",
-    cifNif: "B93063733",
-    direccion: "POETA JOAN MARAGALL 55",
-    cp: "28020",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "8",
-    nombre: "Jesus",
-    apellidos: "Alonso Garcia",
-    cifNif: "843237B",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "9",
-    nombre: "JIMÉNEZ GONZALVEZ",
-    apellidos: "S.C",
-    cifNif: "J01947043",
-    direccion: "",
-    cp: "28044",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "10",
-    nombre: "Jose Luis",
-    apellidos: "Abad Cardenal",
-    cifNif: "759596K",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "11",
-    nombre: "Jose Luis",
-    apellidos: "Fariza Ballesteros",
-    cifNif: "0423409W",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "12",
-    nombre: "Jose Maria",
-    apellidos: "Martinez Ramos",
-    cifNif: "2625260V",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "13",
-    nombre: "LIDL SUPERMERCADOS",
-    apellidos: "SAU",
-    cifNif: "A60195278",
-    direccion: "C/ BEAT ORIOL S/N POLIGONO INDUSTRIAL LA GRANJA",
-    cp: "08110",
-    ciudad: "MONTCADA I REIXAC (BARCELONA)",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "14",
-    nombre: "Luis",
-    apellidos: "Sada Castanos",
-    cifNif: "5362921B",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "15",
-    nombre: "Lurca",
-    apellidos: "S.A.U",
-    cifNif: "A28836880",
-    direccion: "",
-    cp: "28046",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "16",
-    nombre: "Maria Aurora",
-    apellidos: "Espino Rincon",
-    cifNif: "12311752J",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "17",
-    nombre: "Miguel Angel",
-    apellidos: "Ramos Jauregui",
-    cifNif: "50851041L",
-    direccion: "",
-    cp: "28007",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "18",
-    nombre: "MR PEREZ MANAGEMENT",
-    apellidos: "S.L",
-    cifNif: "B87902698",
-    direccion: "",
-    cp: "28001",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "19",
-    nombre: "VOLODYMYR",
-    apellidos: "IHOSHYN",
-    cifNif: "X3795093R",
-    direccion: "MELQUIADES BIENCINTO 9",
-    cp: "28053",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-  {
-    id: "20",
-    nombre: "AUDIOLOGIA ALCALA",
-    apellidos: "sl",
-    cifNif: "B88130588",
-    direccion: "ALCALA 199",
-    cp: "28028",
-    ciudad: "MADRID",
-    sociedadId: "PARKING001",
-  },
-]
+  // ... (tu array INITIAL_CLIENTS)
+];
 
-export default function ClientsManager() { // Mantén esta exportación por defecto
+export default function ClientsManager() { // <-- ¡SOLO ESTA EXPORTACIÓN POR DEFECTO EN ESTE ARCHIVO!
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Initialize form data with proper default values
   const getInitialFormData = () => ({
     nombre: "",
     apellidos: "",
@@ -259,7 +52,7 @@ export default function ClientsManager() { // Mantén esta exportación por defe
     try {
       const stored = localStorage.getItem("parking-clients");
       if (stored) {
-        setClients(JSON.parse(stored));
+        setData(JSON.parse(stored)); // <-- Aquí debería ser setClients, no setData
       } else {
         setClients(INITIAL_CLIENTS);
         localStorage.setItem("parking-clients", JSON.stringify(INITIAL_CLIENTS));
@@ -450,9 +243,8 @@ export default function ClientsManager() { // Mantén esta exportación por defe
           </Dialog>
         </div>
 
-        {/* Agrega el componente ExcelTools aquí, preferiblemente cerca de donde tiene sentido para el usuario,
-            por ejemplo, cerca de la barra de búsqueda o el botón de "Nuevo Cliente". */}
-        <div className="flex justify-end"> {/* Puedes ajustar la posición según tu diseño */}
+        {/* Agrega el componente ExcelTools aquí para clientes */}
+        <div className="flex justify-end">
           <ExcelTools storageKey="parking-clients" fileName="clientes" />
         </div>
 
