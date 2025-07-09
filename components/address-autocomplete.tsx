@@ -40,29 +40,13 @@ export function AddressAutocomplete({
 
   const inputRef = useRef<HTMLInputElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Limpiar timers al desmontar
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
-  }, [])
 
   useEffect(() => {
     const searchAddresses = async () => {
-      const trimmedQuery = query.trim()
-      
-      if (trimmedQuery.length < 3) {
+      if (query.length < 3) {
         setSuggestions([])
         setShowSuggestions(false)
         setApiInfo(null)
-        setIsLoading(false)
         return
       }
 
@@ -75,13 +59,10 @@ export function AddressAutocomplete({
       setIsLoading(true)
 
       try {
-        console.log("🚀 Buscando direcciones para:", trimmedQuery)
+        console.log("🚀 Buscando direcciones para:", query)
 
-        const response = await fetch(`/api/address-search?q=${encodeURIComponent(trimmedQuery)}`, {
+        const response = await fetch(`/api/address-search?q=${encodeURIComponent(query)}`, {
           signal: abortControllerRef.current.signal,
-          headers: {
-            'Content-Type': 'application/json',
-          },
         })
 
         if (!response.ok) {
@@ -94,59 +75,41 @@ export function AddressAutocomplete({
         if (data.success) {
           setSuggestions(data.results || [])
           setApiInfo(data.sources)
-          setShowSuggestions((data.results?.length || 0) > 0)
+          setShowSuggestions(data.results?.length > 0)
           setSelectedIndex(-1)
         } else {
           console.error("❌ Error en API:", data.error)
           setSuggestions([])
           setShowSuggestions(false)
-          setApiInfo(null)
         }
       } catch (error: any) {
         if (error.name !== "AbortError") {
           console.error("❌ Error en búsqueda:", error)
           setSuggestions([])
           setShowSuggestions(false)
-          setApiInfo(null)
         }
       } finally {
         setIsLoading(false)
       }
     }
 
-    // Limpiar timer anterior
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-    }
-
-    // Configurar nuevo timer
-    debounceTimerRef.current = setTimeout(searchAddresses, 500)
-
+    const debounceTimer = setTimeout(searchAddresses, 300) // Más rápido
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
+      clearTimeout(debounceTimer)
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
       }
     }
   }, [query])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+  const handleInputChange = (value: string) => {
     setQuery(value)
-    
-    // Si el input está vacío, limpiar sugerencias inmediatamente
-    if (!value.trim()) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      setApiInfo(null)
-      setIsLoading(false)
-    }
   }
 
   const handleSuggestionClick = (address: AddressResult) => {
     console.log("✅ Dirección seleccionada:", address)
     setQuery(address.street)
     setShowSuggestions(false)
-    setSuggestions([])
 
     onAddressSelect({
       direccion: address.street,
@@ -181,17 +144,10 @@ export function AddressAutocomplete({
   }
 
   const handleBlur = () => {
-    // Delay para permitir clicks en sugerencias
     setTimeout(() => {
       setShowSuggestions(false)
       setSelectedIndex(-1)
     }, 200)
-  }
-
-  const handleFocus = () => {
-    if (query.trim().length >= 3 && suggestions.length > 0) {
-      setShowSuggestions(true)
-    }
   }
 
   const getSourceIcon = (source: string) => {
@@ -234,10 +190,10 @@ export function AddressAutocomplete({
           ref={inputRef}
           id="direccion"
           value={query}
-          onChange={handleInputChange}
+          onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          onFocus={handleFocus}
+          onFocus={() => query.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
           placeholder="Ej: Calle Lisboa en Leganés"
           disabled={disabled}
           className="pr-10"
@@ -260,7 +216,6 @@ export function AddressAutocomplete({
                 index === selectedIndex ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
               }`}
               onClick={() => handleSuggestionClick(address)}
-              onMouseEnter={() => setSelectedIndex(index)}
             >
               <div className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
@@ -282,23 +237,23 @@ export function AddressAutocomplete({
             </div>
           ))}
 
-          {apiInfo && (
-            <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-t">
-              <div className="flex items-center justify-between">
-                <span>🎯 Búsqueda mejorada con múltiples fuentes</span>
+          <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-t">
+            <div className="flex items-center justify-between">
+              <span>🎯 Búsqueda mejorada con múltiples fuentes</span>
+              {apiInfo && (
                 <div className="flex gap-2">
                   {apiInfo.local > 0 && <span className="text-green-600">Local: {apiInfo.local}</span>}
                   {apiInfo.nominatim > 0 && <span className="text-blue-600">OSM: {apiInfo.nominatim}</span>}
                   {apiInfo.photon > 0 && <span className="text-purple-600">Photon: {apiInfo.photon}</span>}
                   {apiInfo.mapbox > 0 && <span className="text-orange-600">MapBox: {apiInfo.mapbox}</span>}
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
-      {showSuggestions && suggestions.length === 0 && !isLoading && query.trim().length >= 3 && (
+      {showSuggestions && suggestions.length === 0 && !isLoading && query.length >= 3 && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-4 text-center text-gray-500 text-sm">
           <Globe className="h-8 w-8 mx-auto mb-2 text-gray-300" />
           No se encontraron direcciones para "{query}"
@@ -309,7 +264,7 @@ export function AddressAutocomplete({
         </div>
       )}
 
-      {query.trim().length > 0 && query.trim().length < 3 && (
+      {query.length > 0 && query.length < 3 && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg p-3 text-center text-gray-500 text-xs">
           <Loader2 className="h-4 w-4 mx-auto mb-1 text-gray-300" />
           Escriba al menos 3 caracteres...
