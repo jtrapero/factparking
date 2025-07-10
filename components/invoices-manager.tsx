@@ -1,15 +1,7 @@
 "use client"
 
 import type React from "react"
-import ExcelTools from "@/components/ExcelTools";
 
-export default function ClientsManager() {
-  return (
-    <div>
-<ExcelTools storageKey="facturas" fileName="facturas" />
-     </div>
-  );
-}
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
