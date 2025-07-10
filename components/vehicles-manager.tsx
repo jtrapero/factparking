@@ -20,8 +20,7 @@ import {
 import { Plus, Edit, Trash2, Search, Loader2, CheckCircle, AlertCircle, Globe, ExternalLink } from "lucide-react";
 import { lookupVehicleInfo, generateVehicleModel, validateSpanishLicensePlate } from "@/lib/vehicle-lookup";
 import { Badge } from "@/components/ui/badge";
-import ExcelTools from "@/components/ExcelTools"; // Asegúrate de que esta importación esté presente y con la capitalización correcta
-
+i
 interface Vehicle {
   id: string;
   matricula: string;
